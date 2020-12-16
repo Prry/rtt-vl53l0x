@@ -8,7 +8,7 @@ cwd   = GetCurrentDir()
 if GetDepend('PKG_USING_VL53L0X'):
     src += Glob('src/vl53l0x.c')
     src += Glob('vl53l0x/core/src/*.c')
-		src += Glob('vl53l0x/platform/src/*.c')
+    src += Glob('vl53l0x/platform/src/*.c')
 		
 if GetDepend('PKG_USING_VL53L0X_SAMPLE'):
     src += Glob('examples/vl53l0x_sample.c')
