@@ -14,7 +14,7 @@ if GetDepend('PKG_USING_VL53L0X_SAMPLE'):
     src += Glob('examples/vl53l0x_sample.c')
 
 # add vl53l0x include path.
-path  = [cwd + '/inc',cwd+'/vl53l0x/core/inc',cwd+'/vl53l0x/core/inc']
+path  = [cwd + '/inc',cwd+'/vl53l0x/core/inc',cwd+'/vl53l0x/platform/inc']
 
 # add src and include to group.
 group = DefineGroup('vl53l0x', src, depend = ['PKG_USING_VL53L0X'], CPPPATH = path)
