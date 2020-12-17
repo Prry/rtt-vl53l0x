@@ -30,10 +30,11 @@
 /* vl53l0x for RT-Thread sensor device */
 #define	VL53L0X_DIST_RANGE_MAX	(2000)	/* 1mm */	
 #define	VL53L0X_DIST_RANGE_MIN	(0)		/* 1mm */
-#define VL53L0X_DIST_PEROID     (100)	/* 10ms */
+#define VL53L0X_DIST_PEROID     (100)	/* 1ms */
 
-static struct rt_i2c_bus_device *i2c_bus_dev;
-static VL53L0X_Dev_t vl53l0x_dev =
+static struct rt_i2c_bus_device *i2c_bus_dev;/* i2c bus device */
+static rt_base_t xshutdown_pin = 0;/* shutdown control pin */
+static VL53L0X_Dev_t vl53l0x_dev = /* vl53l0x device */
 {
 	.comms_type = 1,
 	.comms_speed_khz = 400,
@@ -84,6 +85,27 @@ int32_t vl53l0x_read_regs(uint8_t slave_addr, uint8_t reg, uint8_t *data, uint16
 	  	LOG_E("i2c bus read failed!\r\n");
         return -RT_ERROR;
     }
+}
+
+static rt_err_t vl53l0x_set_power(rt_sensor_t psensor, rt_uint8_t power)
+{	
+    if (power == RT_SENSOR_POWER_DOWN)
+    {
+	  	rt_pin_write(xshutdown_pin, PIN_LOW);
+		psensor->config.power = RT_SENSOR_POWER_DOWN;
+		return RT_EOK;
+    }
+    else if (power == RT_SENSOR_POWER_NORMAL)
+    {
+       	rt_pin_write(xshutdown_pin, PIN_HIGH); 
+		psensor->config.power = RT_SENSOR_POWER_NORMAL;
+		return RT_EOK;
+    }
+    else
+    {
+        return -RT_ERROR;
+    }
+	
 }
 
 VL53L0X_Error vl53l0x_single_ranging_mode(VL53L0X_Dev_t *pdev)
@@ -164,11 +186,11 @@ static rt_size_t vl53l0x_polling_get_data(rt_sensor_t psensor, struct rt_sensor_
 	static VL53L0X_RangingMeasurementData_t vl53l0x_data;
 	
 	pdev = (VL53L0X_Dev_t*)psensor->parent.user_data;
-	if(psensor->info.type == RT_SENSOR_CLASS_PROXIMITY)
+	if(psensor->info.type == RT_SENSOR_CLASS_TOF)
 	{/* actual distance */
 	  	if (vl53l0x_single_read_data(pdev, &vl53l0x_data) == RT_EOK)
 		{
-		  	sensor_data->type = RT_SENSOR_CLASS_PROXIMITY;
+		  	sensor_data->type = RT_SENSOR_CLASS_TOF;
 			sensor_data->data.proximity = vl53l0x_data.RangeMilliMeter;
 			sensor_data->timestamp = rt_sensor_get_ts();
 		}
@@ -228,7 +250,7 @@ static rt_err_t vl53l0x_control(struct rt_sensor_device *psensor, int cmd, void 
 		break;
 		
 		case RT_SENSOR_CTRL_SET_POWER:
-	  		
+			vl53l0x_set_power(psensor, (rt_uint32_t)args & 0xff);
 	  	break;
 		
         default:
@@ -243,17 +265,18 @@ static struct rt_sensor_ops vl53l0x_ops =
     vl53l0x_control,
 };
 
-int rt_hw_vl53l0x_init(const char *name, struct rt_sensor_config *cfg, rt_base_t rst_pin)
+int rt_hw_vl53l0x_init(const char *name, struct rt_sensor_config *cfg, rt_base_t xsht_pin)
 {
   	rt_err_t ret = RT_EOK;
 	rt_sensor_t sensor_dist = RT_NULL;
 	VL53L0X_DeviceInfo_t vl53l0x_info;
 	struct rt_i2c_bus_device *i2c_bus = RT_NULL;	/* linked i2c bus */
-		
-	rt_pin_mode(rst_pin, PIN_MODE_OUTPUT);
-	rt_pin_write(rst_pin, PIN_LOW);
+	
+	xshutdown_pin = xsht_pin;
+	rt_pin_mode(xsht_pin, PIN_MODE_OUTPUT);
+	rt_pin_write(xsht_pin, PIN_LOW);
 	rt_thread_delay(10);
-	rt_pin_write(rst_pin, PIN_HIGH);
+	rt_pin_write(xsht_pin, PIN_HIGH);
 	
     i2c_bus = rt_i2c_bus_device_find(cfg->intf.dev_name);
     if(i2c_bus == RT_NULL)
@@ -266,6 +289,7 @@ int rt_hw_vl53l0x_init(const char *name, struct rt_sensor_config *cfg, rt_base_t
 	vl53l0x_dev.I2cDevAddr = (rt_uint32_t)(cfg->intf.user_data) & 0xff;
 	vl53l0x_dev.RegRead = vl53l0x_read_regs;
 	vl53l0x_dev.RegWrite = vl53l0x_write_regs;
+	
     /* tof sensor register */
     {
         sensor_dist = rt_calloc(1, sizeof(struct rt_sensor_device));
@@ -274,9 +298,9 @@ int rt_hw_vl53l0x_init(const char *name, struct rt_sensor_config *cfg, rt_base_t
 			goto __exit;
 		}
 		rt_memset(sensor_dist, 0x0, sizeof(struct rt_sensor_device));
-        sensor_dist->info.type       = RT_SENSOR_CLASS_PROXIMITY;
+        sensor_dist->info.type       = RT_SENSOR_CLASS_TOF;
         sensor_dist->info.vendor     = RT_SENSOR_VENDOR_STM;
-        sensor_dist->info.model      = "vl53l0x_tof";
+        sensor_dist->info.model      = "vl53l0x";
         sensor_dist->info.unit       = RT_SENSOR_UNIT_MM;
         sensor_dist->info.intf_type  = RT_SENSOR_INTF_I2C;
         sensor_dist->info.range_max  = VL53L0X_DIST_RANGE_MAX;	
@@ -294,18 +318,21 @@ int rt_hw_vl53l0x_init(const char *name, struct rt_sensor_config *cfg, rt_base_t
         }
     }
    
+	/* vl53l0x init */
 	if (VL53L0X_ERROR_NONE != VL53L0X_DataInit(&vl53l0x_dev))
 	{
 		LOG_E("vl53l0x data init failed\r\n");
 		goto __exit;	
 	} 
 	
+	/* vl53l0x read version */
 	if (VL53L0X_ERROR_NONE == VL53L0X_GetDeviceInfo(&vl53l0x_dev, &vl53l0x_info))
 	{
 		LOG_I("vl53l0x info:\n      Name[%s]\n      Type[%s]\n      ProductId[%s]\r\n",
 			  vl53l0x_info.Name, vl53l0x_info.Type, vl53l0x_info.ProductId);
 	}	
 	
+	/* set single ranging mode */
 	if (VL53L0X_ERROR_NONE != vl53l0x_single_ranging_mode(&vl53l0x_dev))
 	{
 	  	LOG_E("vl53l0x single ranging init failed\r\n");
