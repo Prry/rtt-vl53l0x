@@ -14,14 +14,14 @@
 #include "sensor.h"
 #include "vl53l0x.h"
 
-static void read_temp_entry(void *parameter)
+static void read_distance_entry(void *parameter)
 {
     rt_device_t temp_dev = RT_NULL;
     struct rt_sensor_data temp_data;
     rt_size_t res = 0;
 	rt_uint32_t index = 0;
 	
-	temp_dev = rt_device_find("pr_vl53l0x");
+	temp_dev = rt_device_find("tof_vl53l0x");
     if (temp_dev == RT_NULL)
     {
 	  	 rt_kprintf("not found tof_vl53l0x device\r\n");
@@ -45,7 +45,7 @@ static void read_temp_entry(void *parameter)
         }
         else
         {
-        	rt_kprintf("temp[%dmm],timestamp[%d]\r\n",temp_data.data.proximity,
+        	rt_kprintf("distance[%dmm],timestamp[%d]\r\n",temp_data.data.proximity,
 					   temp_data.timestamp);
         }
 		
@@ -58,24 +58,24 @@ static void read_temp_entry(void *parameter)
     }
 }
 
-static int temp_read_sample(void)
+static int read_distance_sample(void)
 {
-    rt_thread_t temp_thread;
+    rt_thread_t distance_thread;
 
-    temp_thread = rt_thread_create("tof_r",
-                                     read_temp_entry,
+    distance_thread = rt_thread_create("tof_r",
+                                     read_distance_entry,
                                      RT_NULL,
                                      1024,
                                      RT_THREAD_PRIORITY_MAX / 2,
                                      20);
-    if (temp_thread != RT_NULL)
+    if (distance_thread != RT_NULL)
     {
-        rt_thread_startup(temp_thread);
+        rt_thread_startup(distance_thread);
     }
 
     return RT_EOK;
 }
-INIT_APP_EXPORT(temp_read_sample);
+INIT_APP_EXPORT(read_distance_sample);
 
 static int rt_hw_vl53l0x_port(void)
 {
@@ -83,7 +83,7 @@ static int rt_hw_vl53l0x_port(void)
     	
 	cfg.intf.dev_name = "i2c1"; 		/* i2c bus */
     cfg.intf.user_data = (void *)0x29;	/* i2c slave addr */
-    rt_hw_vl53l0x_init("vl53l0x", &cfg, 57);/* vl53l0x */
+    rt_hw_vl53l0x_init("vl53l0x", &cfg, 57);/* xshutdown ctrl pin */
 
     return RT_EOK;
 }
