@@ -297,7 +297,6 @@ int rt_hw_vl53l0x_init(const char *name, struct rt_sensor_config *cfg, rt_base_t
 	if (VL53L0X_ERROR_NONE != VL53L0X_DataInit(&vl53l0x_dev))
 	{
 		LOG_E("vl53l0x data init failed\r\n");
-		goto __exit;	
 	} 
 	
 	if (VL53L0X_ERROR_NONE == VL53L0X_GetDeviceInfo(&vl53l0x_dev, &vl53l0x_info))
@@ -309,7 +308,6 @@ int rt_hw_vl53l0x_init(const char *name, struct rt_sensor_config *cfg, rt_base_t
 	if (VL53L0X_ERROR_NONE != vl53l0x_single_ranging_mode(&vl53l0x_dev))
 	{
 	  	LOG_E("vl53l0x single ranging init failed\r\n");
-		goto __exit;	
 	}
 
 	return RT_EOK;
