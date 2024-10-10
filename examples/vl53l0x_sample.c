@@ -11,7 +11,6 @@
 
 #include <rtthread.h>
 #include <rtdevice.h>
-#include "sensor.h"
 #include "vl53l0x.h"
 
 static void read_distance_entry(void *parameter)
