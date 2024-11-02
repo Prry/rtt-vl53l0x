@@ -179,7 +179,7 @@ static rt_err_t vl53l0x_single_read_data(VL53L0X_Dev_t *pdev, VL53L0X_RangingMea
 	return RT_EOK;
 }
 
-static rt_size_t vl53l0x_polling_get_data(rt_sensor_t psensor, struct rt_sensor_data *sensor_data)
+static RT_SIZE_TYPE vl53l0x_polling_get_data(rt_sensor_t psensor, struct rt_sensor_data *sensor_data)
 {
   	VL53L0X_Dev_t *pdev;
 	static VL53L0X_RangingMeasurementData_t vl53l0x_data;
@@ -206,7 +206,7 @@ static rt_size_t vl53l0x_polling_get_data(rt_sensor_t psensor, struct rt_sensor_
     return 1;
 }
 
-static rt_ssize_t vl53l0x_fetch_data(struct rt_sensor_device *psensor, void *buf, rt_size_t len)
+static RT_SIZE_TYPE vl53l0x_fetch_data(struct rt_sensor_device *psensor, void *buf, rt_size_t len)
 {
     RT_ASSERT(buf);
 	RT_ASSERT(psensor);
