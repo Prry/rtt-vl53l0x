@@ -12,11 +12,11 @@
 #include <string.h>
 #include <rtthread.h>
 #include <rtdevice.h>
-#include "vl53l0x.h"
+#include "vl53l0x_sensor_v1.h"
 #include "vl53l0x_platform.h"
 #include "vl53l0x_api.h"
 
-#ifdef PKG_USING_VL53L0X
+#ifdef PKG_VL53L0X_USING_SENSOR_V1
 
 #define DBG_TAG "vl53l0x"
 #define DBG_LVL DBG_INFO
