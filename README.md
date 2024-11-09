@@ -140,7 +140,7 @@ int rt_hw_vl53l0x_init(const char *name, struct rt_sensor_config *cfg，rt_base_
 **参考示例：**
 
 ```c
-#include "vl53l0x.h"
+#include "vl53l0x_sensor_v1.h"
 
 static int rt_hw_vl53l0x_port(void)
 {

@@ -12,12 +12,11 @@
 #include <string.h>
 #include <rtthread.h>
 #include <rtdevice.h>
-#include "sensor.h"
-#include "vl53l0x.h"
+#include "vl53l0x_sensor_v1.h"
 #include "vl53l0x_platform.h"
 #include "vl53l0x_api.h"
 
-#ifdef PKG_USING_VL53L0X
+#ifdef PKG_VL53L0X_USING_SENSOR_V1
 
 #define DBG_TAG "vl53l0x"
 #define DBG_LVL DBG_INFO
@@ -180,7 +179,7 @@ static rt_err_t vl53l0x_single_read_data(VL53L0X_Dev_t *pdev, VL53L0X_RangingMea
 	return RT_EOK;
 }
 
-static rt_size_t vl53l0x_polling_get_data(rt_sensor_t psensor, struct rt_sensor_data *sensor_data)
+static RT_SIZE_TYPE vl53l0x_polling_get_data(rt_sensor_t psensor, struct rt_sensor_data *sensor_data)
 {
   	VL53L0X_Dev_t *pdev;
 	static VL53L0X_RangingMeasurementData_t vl53l0x_data;
@@ -207,7 +206,7 @@ static rt_size_t vl53l0x_polling_get_data(rt_sensor_t psensor, struct rt_sensor_
     return 1;
 }
 
-static rt_size_t vl53l0x_fetch_data(struct rt_sensor_device *psensor, void *buf, rt_size_t len)
+static RT_SIZE_TYPE vl53l0x_fetch_data(struct rt_sensor_device *psensor, void *buf, rt_size_t len)
 {
     RT_ASSERT(buf);
 	RT_ASSERT(psensor);
